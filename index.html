@@ -6,105 +6,31 @@
     <title>RNA Secondary Structure Visualizer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <style id="graph-styles">
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-
-        .mono {
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        /* Custom Detail/Summary Styles */
-        details > summary {
-            list-style: none;
-            cursor: pointer;
-        }
-        details > summary::-webkit-details-marker {
-            display: none;
-        }
-        details > summary:hover {
-            background-color: #f1f5f9;
-        }
-        details[open] > summary .arrow {
-            transform: rotate(90deg);
-        }
-
-        /* Graph Styles */
-        .link {
-            stroke-opacity: 0.6;
-            transition: stroke-width 0.2s, stroke-dasharray 0.2s;
-        }
-
-        .link.backbone {
-            stroke: #94a3b8; /* Slate 400 */
-            stroke-linecap: round;
-        }
-
-        .link.pair {
-            stroke: #ef4444; /* Red 500 */
-        }
-
-        .node circle {
-            transition: fill 0.2s, stroke 0.2s, stroke-width 0.2s;
-            cursor: grab;
-        }
-
-        .node circle:active {
-            cursor: grabbing;
-        }
-
-        .node text {
-            pointer-events: none;
-            text-anchor: middle;
-            dominant-baseline: central;
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 700;
-            fill: white;
-            /* Text shadow handled in JS now to fix outline bug */
-            transition: font-size 0.2s;
-        }
-        
-        /* 5' and 3' labels */
-        .end-label {
-            font-size: 14px;
-            font-weight: bold;
-            fill: #475569;
-        }
-
-        /* Custom Scrollbar for the sidebar */
-        aside::-webkit-scrollbar {
-            width: 6px;
-        }
-        aside::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        aside::-webkit-scrollbar-thumb {
-            background-color: #cbd5e1;
-            border-radius: 20px;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body class="bg-slate-50 h-screen flex flex-col overflow-hidden">
 
     <!-- Header -->
-    <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm z-10">
+    <header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shadow-sm z-10">
         <div class="flex items-center gap-3">
             <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">R</div>
             <h1 class="text-xl font-bold text-slate-800">RNA Fold Viz</h1>
         </div>
-        <div class="text-sm text-slate-500 hidden sm:block">
-            D3 Force-Directed Graph
+        <div class="flex items-center gap-3">
+            <div class="text-sm text-slate-500 hidden sm:block">
+                D3 Force-Directed Graph
+            </div>
+            <button id="toggleSidebar" class="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 px-2 py-1.5 rounded border border-slate-200 bg-white">
+                <span class="text-xs font-semibold">Settings</span>
+            </button>
         </div>
     </header>
 
-    <div class="flex flex-1 overflow-hidden">
+    <div class="flex flex-1 overflow-hidden relative flex-col sm:flex-row">
         
         <!-- Sidebar Controls -->
-        <aside class="w-96 bg-white border-r border-slate-200 flex flex-col z-10 overflow-y-auto">
-            <div class="p-4 space-y-4">
+        <aside id="sidebar" class="absolute inset-y-0 left-0 w-80 sm:w-96 max-w-[90vw] sm:max-w-none bg-white border-r border-slate-200 flex flex-col z-20 overflow-y-auto sm:static sm:inset-auto">
+            <div class="sidebar-inner p-4 space-y-4">
                 
                 <!-- Section: Input & Presets -->
                 <div class="space-y-3">
@@ -113,7 +39,7 @@
                     <div class="grid grid-cols-2 gap-2">
                         <button onclick="loadPreset('hairpin')" class="px-2 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition">Hairpin</button>
                         <button onclick="loadPreset('trna')" class="px-2 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition">tRNA</button>
-                        <button onclick="loadPreset('pseudoknot')" class="px-2 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition">Pknot</button>
+                        <button onclick="loadPreset('pseudoknot')" class="px-2 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition">Pseudo knot</button>
                         <button onclick="loadPreset('random')" class="px-2 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition">Random</button>
                     </div>
 
@@ -262,6 +188,7 @@
 
             </div>
         </aside>
+        <div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
 
         <!-- Visualization Area -->
         <main class="flex-1 relative bg-slate-50 cursor-move" id="viz-container">
@@ -270,490 +197,17 @@
             </div>
             <!-- SVG will be injected here -->
             <div class="absolute bottom-4 right-4 bg-white/90 backdrop-blur p-3 rounded-lg shadow border border-slate-200 text-xs text-slate-600 pointer-events-none select-none">
-                <div class="flex items-center gap-2 mb-1"><span class="w-3 h-3 rounded-full bg-slate-400"></span> Backbone</div>
-                <div class="flex items-center gap-2 mb-1"><span class="w-3 h-3 rounded-full border-t-2 border-red-500 border-dashed"></span> Hydrogen Bond</div>
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="legend-line bg-slate-400"></span> Backbone
+                </div>
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="legend-line border-t-2 border-red-500 border-dashed bg-transparent"></span> Hydrogen Bond
+                </div>
                 <div class="mt-2 text-slate-400">Scroll to zoom • Drag to pin</div>
             </div>
         </main>
     </div>
 
-    <script>
-        // --- Configuration & State ---
-        const config = {
-            colors: {
-                'A': '#ef4444', // Red
-                'U': '#3b82f6', // Blue
-                'G': '#22c55e', // Green
-                'C': '#eab308', // Yellow
-                'T': '#3b82f6', // DNA T
-                'default': '#94a3b8'
-            }
-        };
-
-        // Mutable parameters
-        let params = {
-            radius: 20,
-            fontSize: 20,
-            backboneDist: 40,
-            pairDist: 40,
-            charge: -300,
-            linkStrength: 0.2,
-            
-            nodeStyle: 'solid',
-            backboneStyle: 'solid',
-            pairStyle: 'dashed',
-            
-            backboneWidth: 3,
-            pairWidth: 2
-        };
-
-        let simulation;
-        let svg, g, linkLayer, nodeLayer, zoom;
-        let nodes = [];
-        let links = [];
-
-        // --- Presets ---
-        const presets = {
-            hairpin: {
-                seq: "GGGGAAAACCCC",
-                struct: "((((....))))"
-            },
-            trna: {
-                // Yeast Phenylalanine tRNA
-                seq: "GCGGAUUUAGCUCAGUUGGGAGAGCGCCAGACUGAAGAUCUGGAGGUCCUGUGUUCGAUCCACAGAAUUCGCACCA",
-                struct: "(((((((..((((........)))).(((((.......))))).....(((((.......))))))))))))...."
-            },
-            pseudoknot: {
-                seq: "GGGGAAAAAAACCCCUUUUUUU",
-                struct: "((((...[[[[))))...]]]]"
-            }
-        };
-
-        // --- Initialization ---
-        function init() {
-            const container = document.getElementById('viz-container');
-            const width = container.clientWidth;
-            const height = container.clientHeight;
-
-            // Setup SVG
-            svg = d3.select("#viz-container").append("svg")
-                .attr("width", "100%")
-                .attr("height", "100%")
-                .attr("viewBox", [0, 0, width, height])
-                .attr("xmlns", "http://www.w3.org/2000/svg");
-
-            // Add Zoom Behavior
-            zoom = d3.zoom()
-                .scaleExtent([0.1, 4])
-                .on("zoom", (event) => {
-                    g.attr("transform", event.transform);
-                });
-
-            svg.call(zoom);
-
-            // Container group for the graph
-            g = svg.append("g");
-            
-            // Create layers
-            linkLayer = g.append("g").attr("class", "links");
-            nodeLayer = g.append("g").attr("class", "nodes");
-
-            // Setup Simulation
-            simulation = d3.forceSimulation()
-                .force("link", d3.forceLink().id(d => d.id).iterations(10)) 
-                .force("charge", d3.forceManyBody())
-                .force("center", d3.forceCenter(width / 2, height / 2))
-                .force("collide", d3.forceCollide());
-
-            // Initialize controls listeners
-            setupControls();
-
-            // Load default
-            loadPreset('hairpin');
-
-            // Handle resize
-            window.addEventListener('resize', () => {
-                const w = container.clientWidth;
-                const h = container.clientHeight;
-                simulation.force("center", d3.forceCenter(w / 2, h / 2));
-                simulation.alpha(0.3).restart();
-            });
-        }
-
-        // --- Core Logic: Parsing ---
-        function parseInput() {
-            let seq = document.getElementById('sequenceInput').value.toUpperCase().replace(/\s+/g, '');
-            let struct = document.getElementById('structureInput').value.replace(/\s+/g, '');
-
-            if (struct.length < seq.length) struct = struct.padEnd(seq.length, '.');
-            if (struct.length > seq.length) struct = struct.substring(0, seq.length);
-
-            // 1. Create Nodes
-            const container = document.getElementById('viz-container');
-            const cx = container ? container.clientWidth / 2 : 400;
-            const cy = container ? container.clientHeight / 2 : 300;
-            
-            const newNodes = [];
-            for (let i = 0; i < seq.length; i++) {
-                newNodes.push({
-                    id: i,
-                    base: seq[i] || '?',
-                    index: i + 1,
-                    x: cx + (i - seq.length/2) * 10, 
-                    y: cy + (i % 2 === 0 ? 5 : -5)
-                });
-            }
-
-            // 2. Create Links
-            const newLinks = [];
-            
-            // Backbone
-            for (let i = 0; i < seq.length - 1; i++) {
-                newLinks.push({ source: i, target: i + 1, type: 'backbone' });
-            }
-
-            // Pairs
-            const brackets = { '(': ')', '[': ']', '{': '}', '<': '>' };
-            const openStacks = { '(': [], '[': [], '{': [], '<': [] };
-
-            for (let i = 0; i < struct.length; i++) {
-                const char = struct[i];
-                if (Object.keys(openStacks).includes(char)) {
-                    openStacks[char].push(i);
-                } else {
-                    for (let opener in brackets) {
-                        if (brackets[opener] === char && openStacks[opener].length > 0) {
-                            const start = openStacks[opener].pop();
-                            newLinks.push({ source: start, target: i, type: 'pair' });
-                        }
-                    }
-                }
-            }
-
-            return { nodes: newNodes, links: newLinks };
-        }
-
-        // --- Core Logic: Visualization Update ---
-        function updateVisualization() {
-            const data = parseInput();
-            nodes = data.nodes;
-            links = data.links;
-            
-            readParams();
-
-            simulation.nodes(nodes);
-            
-            simulation.force("link")
-                .links(links)
-                .iterations(10); 
-
-            applyPhysics();
-            render();
-            simulation.alpha(1).restart();
-        }
-
-        function readParams() {
-            // Visuals
-            params.radius = parseFloat(document.getElementById('param-radius').value);
-            params.fontSize = parseFloat(document.getElementById('param-font').value);
-            params.nodeStyle = document.getElementById('style-node').value;
-            
-            params.backboneStyle = document.getElementById('style-backbone').value;
-            params.backboneWidth = parseFloat(document.getElementById('param-w-bb').value);
-            
-            params.pairStyle = document.getElementById('style-pair').value;
-            params.pairWidth = parseFloat(document.getElementById('param-w-pair').value);
-
-            // Physics
-            params.backboneDist = parseFloat(document.getElementById('param-dist-bb').value);
-            params.pairDist = parseFloat(document.getElementById('param-dist-pair').value);
-            params.charge = parseFloat(document.getElementById('param-charge').value);
-            params.linkStrength = parseFloat(document.getElementById('param-link').value);
-        }
-
-        function applyPhysics() {
-            simulation.force("link")
-                .distance(d => d.type === 'backbone' ? params.backboneDist : params.pairDist)
-                .strength(d => {
-                    const s = d.type === 'backbone' ? params.linkStrength : params.linkStrength * 0.8;
-                    return Math.min(1.0, s); 
-                });
-
-            simulation.force("charge").strength(params.charge);
-            simulation.force("collide").radius(params.radius + 2); 
-        }
-
-        function render() {
-            // Links
-            const link = linkLayer.selectAll(".link")
-                .data(links, d => [d.source.id || d.source, d.target.id || d.target, d.type].join("-"));
-            link.exit().remove();
-            const linkEnter = link.enter().append("line").attr("class", d => `link ${d.type}`);
-            const allLinks = linkEnter.merge(link);
-            
-            const showBackbone = document.getElementById('toggle-backbone').checked;
-            allLinks.style("display", d => (d.type === 'backbone' && !showBackbone) ? 'none' : null);
-            
-            // Nodes
-            const node = nodeLayer.selectAll(".node").data(nodes, d => d.id);
-            node.exit().remove();
-
-            const nodeEnter = node.enter().append("g")
-                .attr("class", "node")
-                .call(d3.drag()
-                    .on("start", dragstarted)
-                    .on("drag", dragged)
-                    .on("end", dragended));
-
-            nodeEnter.append("circle")
-                .attr("fill", "#fff") // Initial default
-                .attr("stroke", "#fff")
-                .attr("stroke-width", "2px");
-
-            nodeEnter.append("text")
-                .attr("dy", 1)
-                .text(d => d.base);
-            
-            nodeEnter.append("title")
-                .text(d => `Base: ${d.base}\nPosition: ${d.index}`);
-
-            const allNodes = nodeEnter.merge(node);
-            
-            // Apply visual sizes and styles
-            updateVisualStyles(allNodes, allLinks);
-
-            // Tick
-            simulation.on("tick", () => {
-                allLinks
-                    .attr("x1", d => d.source.x)
-                    .attr("y1", d => d.source.y)
-                    .attr("x2", d => d.target.x)
-                    .attr("y2", d => d.target.y);
-
-                allNodes
-                    .attr("transform", d => `translate(${d.x},${d.y})`);
-            });
-        }
-
-        // Apply Styles to selections
-        function updateVisualStyles(nodeSelection, linkSelection) {
-            if(!nodeSelection) nodeSelection = g.selectAll(".node");
-            if(!linkSelection) linkSelection = g.selectAll(".link");
-            
-            // 1. Update Nodes (Circles)
-            nodeSelection.select("circle")
-                .attr("r", params.radius)
-                .attr("fill", d => {
-                    // Outline: white fill to cover lines behind, colored stroke
-                    if (params.nodeStyle === 'outline') return '#ffffff';
-                    return config.colors[d.base] || config.colors.default;
-                })
-                .attr("stroke", d => {
-                    // Outline: colored stroke
-                    if (params.nodeStyle === 'outline') return config.colors[d.base] || config.colors.default;
-                    return '#ffffff';
-                })
-                .attr("stroke-width", params.nodeStyle === 'outline' ? 2.5 : 2);
-            
-            nodeSelection.classed("outline", params.nodeStyle === 'outline');
-
-            // 2. Update Text (Fixing the "black box" shadow issue by handling in JS)
-            nodeSelection.select("text")
-                .style("font-size", `${params.fontSize}px`)
-                .style("display", params.fontSize === 0 ? "none" : null)
-                .style("fill", params.nodeStyle === 'outline' ? '#334155' : 'white')
-                .style("text-shadow", params.nodeStyle === 'outline' ? 'none' : '0px 1px 2px rgba(0,0,0,0.4)');
-
-            // 3. Update Links
-            const dashArray = {
-                'solid': 'none',
-                'dashed': '5, 5',
-                'dotted': '1, 5'
-            };
-
-            linkSelection
-                .style("stroke-dasharray", d => {
-                    if (d.type === 'backbone') return dashArray[params.backboneStyle];
-                    return dashArray[params.pairStyle];
-                })
-                .style("stroke-linecap", d => {
-                     const style = d.type === 'backbone' ? params.backboneStyle : params.pairStyle;
-                     return style === 'dotted' ? 'round' : 'butt';
-                })
-                .style("stroke-width", d => {
-                    return (d.type === 'backbone' ? params.backboneWidth : params.pairWidth) + "px";
-                });
-        }
-
-        // --- Interaction Helpers ---
-        function dragstarted(event, d) {
-            if (!event.active) simulation.alphaTarget(0.3).restart();
-            d.fx = d.x;
-            d.fy = d.y;
-            d3.select(this).select("circle").attr("stroke", "#333");
-        }
-
-        function dragged(event, d) {
-            d.fx = event.x;
-            d.fy = event.y;
-        }
-
-        function dragended(event, d) {
-            if (!event.active) simulation.alphaTarget(0);
-            d.fx = null;
-            d.fy = null;
-            // Restore proper stroke
-            updateVisualStyles(d3.select(this)); 
-        }
-
-        // --- UI Logic ---
-        function loadPreset(name) {
-            if (name === 'random') {
-                generateRandom();
-                return;
-            }
-            const preset = presets[name];
-            if (preset) {
-                document.getElementById('sequenceInput').value = preset.seq;
-                document.getElementById('structureInput').value = preset.struct;
-                updateVisualization();
-            }
-        }
-
-        function generateRandom() {
-            const length = 40;
-            const bases = ['A', 'U', 'G', 'C'];
-            let seq = "";
-            for(let i=0; i<length; i++) seq += bases[Math.floor(Math.random()*4)];
-            let structArr = new Array(length).fill('.');
-            let stack = [];
-            for(let i=0; i<length; i++) {
-                if(Math.random() > 0.6 && i < length - 4) {
-                    stack.push(i);
-                    structArr[i] = '(';
-                } else if (stack.length > 0 && Math.random() > 0.5 && i > stack[stack.length-1] + 3) {
-                    let start = stack.pop();
-                    structArr[i] = ')';
-                }
-            }
-            while(stack.length > 0) structArr[stack.pop()] = '.';
-            document.getElementById('sequenceInput').value = seq;
-            document.getElementById('structureInput').value = structArr.join('');
-            updateVisualization();
-        }
-
-        function clearStructure() {
-            document.getElementById('structureInput').value = "";
-        }
-
-        function setupControls() {
-            // Restore robust event handling: Separate logic for sliders and selects
-            // This prevents the bug where selects were overwritten by invalid text updates
-            
-            // 1. Handle Sliders (Input Event)
-            const sliderIds = [
-                'param-radius', 'param-font', 
-                'param-w-bb', 'param-w-pair',
-                'param-dist-bb', 'param-dist-pair', 'param-charge', 'param-link'
-            ];
-
-            sliderIds.forEach(id => {
-                const el = document.getElementById(id);
-                if(el) {
-                    el.addEventListener('input', (e) => {
-                        const valId = id.replace('param', 'val');
-                        const valEl = document.getElementById(valId);
-                        if(valEl) valEl.innerText = e.target.value;
-
-                        readParams();
-                        if(!simulation) return;
-
-                        // Physics vs Visuals check
-                        if(id.includes('dist') || id.includes('charge') || id.includes('link')) {
-                            applyPhysics();
-                            simulation.alpha(0.3).restart();
-                        } else if (id === 'param-radius') {
-                            updateVisualStyles();
-                            applyPhysics(); // Update collision radius
-                            simulation.alpha(0.3).restart();
-                        } else {
-                            updateVisualStyles();
-                        }
-                    });
-                }
-            });
-
-            // 2. Handle Dropdowns (Change Event)
-            const selectIds = ['style-node', 'style-backbone', 'style-pair'];
-            selectIds.forEach(id => {
-                const el = document.getElementById(id);
-                if(el) {
-                    el.addEventListener('change', () => {
-                        readParams();
-                        updateVisualStyles();
-                    });
-                }
-            });
-
-            // 3. Toggle Backbone
-            const toggle = document.getElementById('toggle-backbone');
-            if(toggle) {
-                toggle.addEventListener('change', () => {
-                    render();
-                });
-            }
-        }
-        
-        function exportImage(type) {
-            const serializer = new XMLSerializer();
-            const styles = document.getElementById('graph-styles').textContent;
-            const svgClone = svg.node().cloneNode(true);
-            
-            const styleElement = document.createElementNS("http://www.w3.org/2000/svg", "style");
-            styleElement.textContent = styles;
-            svgClone.insertBefore(styleElement, svgClone.firstChild);
-            
-            let source = serializer.serializeToString(svgClone);
-            if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
-                source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-            }
-
-            const svgBlob = new Blob([source], {type: "image/svg+xml;charset=utf-8"});
-            const url = URL.createObjectURL(svgBlob);
-
-            if (type === 'svg') {
-                triggerDownload(url, 'rna_structure.svg');
-            } else if (type === 'png') {
-                const canvas = document.createElement("canvas");
-                const bbox = svg.node().getBoundingClientRect();
-                const scale = 2;
-                canvas.width = bbox.width * scale;
-                canvas.height = bbox.height * scale;
-                
-                const ctx = canvas.getContext("2d");
-                const img = new Image();
-                
-                img.onload = function() {
-                    ctx.fillStyle = "white";
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    triggerDownload(canvas.toDataURL("image/png"), 'rna_structure.png');
-                };
-                img.src = url;
-            }
-        }
-
-        function triggerDownload(url, filename) {
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        window.onload = init;
-
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>

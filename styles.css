@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+.mono {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Custom Detail/Summary Styles */
+details > summary {
+    list-style: none;
+    cursor: pointer;
+}
+details > summary::-webkit-details-marker {
+    display: none;
+}
+details > summary:hover {
+    background-color: #f1f5f9;
+}
+details[open] > summary .arrow {
+    transform: rotate(90deg);
+}
+
+/* Graph Styles */
+.link {
+    stroke-opacity: 0.6;
+    transition: stroke-width 0.2s, stroke-dasharray 0.2s;
+}
+
+.link.backbone {
+    stroke: #94a3b8; /* Slate 400 */
+    stroke-linecap: round;
+}
+
+.link.pair {
+    stroke: #ef4444; /* Red 500 */
+}
+
+.node circle {
+    transition: fill 0.2s, stroke 0.2s, stroke-width 0.2s;
+    cursor: grab;
+}
+
+.node circle:active {
+    cursor: grabbing;
+}
+
+.node text {
+    pointer-events: none;
+    text-anchor: middle;
+    dominant-baseline: central;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    fill: white;
+    /* Text shadow handled in JS now to fix outline bug */
+    transition: font-size 0.2s;
+}
+
+/* 5' and 3' labels */
+.end-label {
+    font-size: 14px;
+    font-weight: bold;
+    fill: #475569;
+}
+
+/* Custom Scrollbar for the sidebar */
+aside::-webkit-scrollbar {
+    width: 6px;
+}
+aside::-webkit-scrollbar-track {
+    background: transparent;
+}
+aside::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 20px;
+}
+
+.legend-line {
+    display: inline-block;
+    width: 20px;
+    height: 0;
+    border-top: 2px solid transparent;
+}
+
+.sidebar-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.2);
+    z-index: 10;
+}
+
+.sidebar-collapsed #sidebar {
+    transform: translateX(-110%);
+    border-right: none;
+}
+
+.sidebar-collapsed #sidebar .sidebar-inner {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#sidebar {
+    transition: transform 0.2s ease;
+}
