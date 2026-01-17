@@ -71,8 +71,9 @@
                                 <div>
                                     <label class="text-xs text-slate-600 block mb-1">Style</label>
                                     <select id="style-node" class="w-full text-xs border-slate-300 rounded shadow-sm">
-                                        <option value="solid">Solid Fill</option>
                                         <option value="outline">Outline</option>
+                                        <option value="solid">Solid Fill</option>
+                                        <option value="transparent">Transparent</option>
                                     </select>
                                 </div>
                                 <div>
@@ -103,13 +104,13 @@
                                         <select id="font-weight" class="w-full text-xs border-slate-300 rounded shadow-sm">
                                             <option value="400">Regular</option>
                                             <option value="600">Semibold</option>
-                                            <option value="700">Bold</option>
+                                            <option value="700" selected>Bold</option>
                                         </select>
                                     </div>
                                     <div>
                                         <label class="text-xs text-slate-600 block mb-1">Style</label>
                                         <select id="font-style" class="w-full text-xs border-slate-300 rounded shadow-sm">
-                                            <option value="normal">Normal</option>
+                                            <option value="normal" selected>Normal</option>
                                             <option value="italic">Italic</option>
                                         </select>
                                     </div>
@@ -138,9 +139,15 @@
                                 </div>
                             </div>
 
-                            <div>
-                                <label class="text-xs text-slate-600 block mb-1">Font Size: <span id="val-font" class="font-mono">20</span>px</label>
-                                <input type="range" id="param-font" min="0" max="40" step="1" value="20" class="w-full accent-indigo-600 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                            <div class="grid grid-cols-2 gap-3 items-end">
+                                <div class="col-span-2">
+                                    <label class="text-xs text-slate-600 block mb-1">Font Size: <span id="val-font" class="font-mono">20</span>px</label>
+                                    <input type="range" id="param-font" min="0" max="40" step="1" value="20" class="w-full accent-indigo-600 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-slate-600 block mb-1">Size</label>
+                                    <input type="number" id="param-font-number" min="0" max="40" step="1" value="20" class="w-full text-xs border border-slate-300 rounded px-2 py-1.5">
+                                </div>
                             </div>
                         </div>
 

@@ -19,7 +19,7 @@ let params = {
     charge: -300,
     linkStrength: 0.2,
 
-    nodeStyle: 'solid',
+    nodeStyle: 'outline',
     backboneStyle: 'solid',
     pairStyle: 'dashed',
 
@@ -30,7 +30,7 @@ let params = {
         C: '#eab308',
         other: '#94a3b8'
     },
-    fontFamily: "'JetBrains Mono', monospace",
+    fontFamily: "'Inter', sans-serif",
     fontWeight: '700',
     fontStyle: 'normal',
     backboneColor: '#94a3b8',
@@ -300,6 +300,7 @@ function resetSettings() {
 
     setValue('param-radius', defaultParams.radius);
     setValue('param-font', defaultParams.fontSize);
+    setValue('param-font-number', defaultParams.fontSize);
     setValue('style-node', defaultParams.nodeStyle);
     setValue('font-family', defaultParams.fontFamily);
     setValue('font-weight', defaultParams.fontWeight);
@@ -415,19 +416,22 @@ function updateVisualStyles(nodeSelection, linkSelection) {
     if (!linkSelection) linkSelection = g.selectAll(".link");
 
     // 1. Update Nodes (Circles)
+    const transparentFill = '#f8fafc';
     nodeSelection.select("circle")
         .attr("r", params.radius)
         .attr("fill", d => {
             // Outline: white fill to cover lines behind, colored stroke
             if (params.nodeStyle === 'outline') return '#ffffff';
+            if (params.nodeStyle === 'transparent') return transparentFill;
             return params.nodeColors[d.base] || params.nodeColors.other;
         })
         .attr("stroke", d => {
             // Outline: colored stroke
             if (params.nodeStyle === 'outline') return params.nodeColors[d.base] || params.nodeColors.other;
+            if (params.nodeStyle === 'transparent') return transparentFill;
             return '#ffffff';
         })
-        .attr("stroke-width", params.nodeStyle === 'outline' ? 2.5 : 2);
+        .attr("stroke-width", params.nodeStyle === 'outline' ? 2.5 : (params.nodeStyle === 'transparent' ? 0 : 2));
 
     // Avoid Tailwind's global `.outline` utility class
     nodeSelection.classed("node-outline", params.nodeStyle === 'outline');
@@ -439,7 +443,7 @@ function updateVisualStyles(nodeSelection, linkSelection) {
         .style("font-family", params.fontFamily)
         .style("font-weight", params.fontWeight)
         .style("font-style", params.fontStyle)
-        .style("fill", params.nodeStyle === 'outline' ? '#000000' : 'white')
+        .style("fill", params.nodeStyle === 'outline' || params.nodeStyle === 'transparent' ? '#000000' : 'white')
         .style("text-shadow", "none")
         .style("stroke", "none")
         .style("stroke-width", 0)
@@ -554,6 +558,10 @@ function setupControls() {
                 const valId = id.replace('param', 'val');
                 const valEl = document.getElementById(valId);
                 if (valEl) valEl.innerText = e.target.value;
+                if (id === 'param-font') {
+                    const num = document.getElementById('param-font-number');
+                    if (num) num.value = e.target.value;
+                }
 
                 readParams();
                 if (!simulation) return;
@@ -572,6 +580,20 @@ function setupControls() {
             });
         }
     });
+
+    const fontNumber = document.getElementById('param-font-number');
+    if (fontNumber) {
+        fontNumber.addEventListener('input', (e) => {
+            const value = Math.max(0, Math.min(40, parseFloat(e.target.value || 0)));
+            const slider = document.getElementById('param-font');
+            if (slider) slider.value = value;
+            const valEl = document.getElementById('val-font');
+            if (valEl) valEl.innerText = value;
+
+            readParams();
+            updateVisualStyles();
+        });
+    }
 
     // 2. Handle Dropdowns (Change Event)
     const selectIds = ['style-node', 'style-backbone', 'style-pair'];
