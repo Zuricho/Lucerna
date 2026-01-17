@@ -300,7 +300,6 @@ function resetSettings() {
 
     setValue('param-radius', defaultParams.radius);
     setValue('param-font', defaultParams.fontSize);
-    setValue('param-font-number', defaultParams.fontSize);
     setValue('style-node', defaultParams.nodeStyle);
     setValue('font-family', defaultParams.fontFamily);
     setValue('font-weight', defaultParams.fontWeight);
@@ -558,11 +557,6 @@ function setupControls() {
                 const valId = id.replace('param', 'val');
                 const valEl = document.getElementById(valId);
                 if (valEl) valEl.innerText = e.target.value;
-                if (id === 'param-font') {
-                    const num = document.getElementById('param-font-number');
-                    if (num) num.value = e.target.value;
-                }
-
                 readParams();
                 if (!simulation) return;
 
@@ -581,19 +575,6 @@ function setupControls() {
         }
     });
 
-    const fontNumber = document.getElementById('param-font-number');
-    if (fontNumber) {
-        fontNumber.addEventListener('input', (e) => {
-            const value = Math.max(0, Math.min(40, parseFloat(e.target.value || 0)));
-            const slider = document.getElementById('param-font');
-            if (slider) slider.value = value;
-            const valEl = document.getElementById('val-font');
-            if (valEl) valEl.innerText = value;
-
-            readParams();
-            updateVisualStyles();
-        });
-    }
 
     // 2. Handle Dropdowns (Change Event)
     const selectIds = ['style-node', 'style-backbone', 'style-pair'];
