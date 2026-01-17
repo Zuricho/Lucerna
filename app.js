@@ -23,9 +23,21 @@ let params = {
     backboneStyle: 'solid',
     pairStyle: 'dashed',
 
-    backboneWidth: 3,
-    pairWidth: 2
+    nodeColors: {
+        A: '#ef4444',
+        U: '#3b82f6',
+        G: '#22c55e',
+        C: '#eab308',
+        other: '#94a3b8'
+    },
+    backboneColor: '#94a3b8',
+    pairColor: '#ef4444',
+
+    backboneWidth: 8,
+    pairWidth: 8
 };
+
+const defaultParams = { ...params };
 
 let simulation;
 let svg, g, linkLayer, nodeLayer, zoom;
@@ -251,18 +263,77 @@ function readParams() {
     params.radius = parseFloat(document.getElementById('param-radius').value);
     params.fontSize = parseFloat(document.getElementById('param-font').value);
     params.nodeStyle = document.getElementById('style-node').value;
+    params.nodeColors = {
+        A: document.getElementById('color-a').value,
+        U: document.getElementById('color-u').value,
+        G: document.getElementById('color-g').value,
+        C: document.getElementById('color-c').value,
+        other: document.getElementById('color-other').value
+    };
 
     params.backboneStyle = document.getElementById('style-backbone').value;
     params.backboneWidth = parseFloat(document.getElementById('param-w-bb').value);
+    params.backboneColor = document.getElementById('color-backbone').value;
 
     params.pairStyle = document.getElementById('style-pair').value;
     params.pairWidth = parseFloat(document.getElementById('param-w-pair').value);
+    params.pairColor = document.getElementById('color-pair').value;
 
     // Physics
     params.backboneDist = parseFloat(document.getElementById('param-dist-bb').value);
     params.pairDist = parseFloat(document.getElementById('param-dist-pair').value);
     params.charge = parseFloat(document.getElementById('param-charge').value);
     params.linkStrength = parseFloat(document.getElementById('param-link').value);
+}
+
+function resetSettings() {
+    const setValue = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.value = value;
+    };
+
+    setValue('param-radius', defaultParams.radius);
+    setValue('param-font', defaultParams.fontSize);
+    setValue('style-node', defaultParams.nodeStyle);
+    setValue('color-a', defaultParams.nodeColors.A);
+    setValue('color-u', defaultParams.nodeColors.U);
+    setValue('color-g', defaultParams.nodeColors.G);
+    setValue('color-c', defaultParams.nodeColors.C);
+    setValue('color-other', defaultParams.nodeColors.other);
+    setValue('style-backbone', defaultParams.backboneStyle);
+    setValue('param-w-bb', defaultParams.backboneWidth);
+    setValue('color-backbone', defaultParams.backboneColor);
+    setValue('style-pair', defaultParams.pairStyle);
+    setValue('param-w-pair', defaultParams.pairWidth);
+    setValue('color-pair', defaultParams.pairColor);
+    setValue('param-dist-bb', defaultParams.backboneDist);
+    setValue('param-dist-pair', defaultParams.pairDist);
+    setValue('param-charge', defaultParams.charge);
+    setValue('param-link', defaultParams.linkStrength);
+
+    const toggle = document.getElementById('toggle-backbone');
+    if (toggle) toggle.checked = true;
+
+    const valPairs = [
+        ['val-radius', defaultParams.radius],
+        ['val-font', defaultParams.fontSize],
+        ['val-w-bb', defaultParams.backboneWidth],
+        ['val-w-pair', defaultParams.pairWidth],
+        ['val-dist-bb', defaultParams.backboneDist],
+        ['val-dist-pair', defaultParams.pairDist],
+        ['val-charge', defaultParams.charge],
+        ['val-link', defaultParams.linkStrength]
+    ];
+    valPairs.forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = value;
+    });
+
+    readParams();
+    applyPhysics();
+    updateVisualStyles();
+    render();
+    if (simulation) simulation.alpha(0.3).restart();
 }
 
 function applyPhysics() {
@@ -340,11 +411,11 @@ function updateVisualStyles(nodeSelection, linkSelection) {
         .attr("fill", d => {
             // Outline: white fill to cover lines behind, colored stroke
             if (params.nodeStyle === 'outline') return '#ffffff';
-            return config.colors[d.base] || config.colors.default;
+            return params.nodeColors[d.base] || params.nodeColors.other;
         })
         .attr("stroke", d => {
             // Outline: colored stroke
-            if (params.nodeStyle === 'outline') return config.colors[d.base] || config.colors.default;
+            if (params.nodeStyle === 'outline') return params.nodeColors[d.base] || params.nodeColors.other;
             return '#ffffff';
         })
         .attr("stroke-width", params.nodeStyle === 'outline' ? 2.5 : 2);
@@ -356,23 +427,32 @@ function updateVisualStyles(nodeSelection, linkSelection) {
     nodeSelection.select("text")
         .style("font-size", `${params.fontSize}px`)
         .style("display", params.fontSize === 0 ? "none" : null)
-        .style("fill", params.nodeStyle === 'outline' ? '#334155' : 'white')
+        .style("fill", params.nodeStyle === 'outline' ? '#000000' : 'white')
         .style("text-shadow", "none")
         .style("stroke", "none")
         .style("stroke-width", 0)
         .attr("filter", params.nodeStyle === 'outline' ? null : "url(#text-shadow)");
 
     // 3. Update Links
-    const dashArray = {
-        'solid': 'none',
-        'dashed': '5, 5',
-        'dotted': '1, 5'
-    };
-
     linkSelection
+        .style("stroke", d => {
+            if (d.type === 'backbone') return params.backboneColor;
+            return params.pairColor;
+        })
         .style("stroke-dasharray", d => {
-            if (d.type === 'backbone') return dashArray[params.backboneStyle];
-            return dashArray[params.pairStyle];
+            if (d.type === 'backbone') {
+                if (params.backboneStyle === 'dashed') return '5, 5';
+                if (params.backboneStyle === 'dotted') return '1, 5';
+                return 'none';
+            }
+
+            if (params.pairStyle === 'dashed') return '5, 5';
+            if (params.pairStyle === 'dotted') {
+                const width = Math.max(1, params.pairWidth);
+                const gap = Math.max(4, width * 2.2);
+                return `${width}, ${gap}`;
+            }
+            return 'none';
         })
         .style("stroke-linecap", d => {
             const style = d.type === 'backbone' ? params.backboneStyle : params.pairStyle;
@@ -492,6 +572,24 @@ function setupControls() {
             });
         }
     });
+
+    const colorIds = ['color-a', 'color-u', 'color-g', 'color-c', 'color-other', 'color-backbone', 'color-pair'];
+    colorIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', () => {
+                readParams();
+                updateVisualStyles();
+            });
+        }
+    });
+
+    const resetButton = document.getElementById('resetSettings');
+    if (resetButton) {
+        resetButton.addEventListener('click', () => {
+            resetSettings();
+        });
+    }
 
     // 3. Toggle Backbone
     const toggle = document.getElementById('toggle-backbone');

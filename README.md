@@ -1,5 +1,5 @@
-# Lucerna
+# LuceRNA
 
-A tool for visualizing RNA secondary structures.
+LuceRNA: A tool for visualizing RNA secondary structure.
 
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RNA Secondary Structure Visualizer</title>
+    <title>LuceRNA: A tool for visualizing RNA secondary structure</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <link rel="stylesheet" href="styles.css">
@@ -14,16 +14,14 @@
     <header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-5 sm:py-4 flex items-center justify-between shadow-sm z-10">
         <div class="flex items-center gap-3">
             <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">R</div>
-            <h1 class="text-xl font-bold text-slate-800">RNA Fold Viz</h1>
-        </div>
-        <div class="flex items-center gap-3">
-            <div class="text-sm text-slate-500 hidden sm:block">
-                D3 Force-Directed Graph
+            <div class="flex flex-col">
+                <h1 class="text-lg sm:text-xl font-bold text-slate-800">LuceRNA: A tool for visualizing RNA secondary structure</h1>
+                <p class="text-xs sm:text-sm text-slate-500">Interactive folding visualization and force-directed layout controls.</p>
             </div>
-            <button id="toggleSidebar" class="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 px-2 py-1.5 rounded border border-slate-200 bg-white">
-                <span class="text-xs font-semibold">Settings</span>
-            </button>
         </div>
+        <button id="toggleSidebar" class="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 px-2 py-1.5 rounded border border-slate-200 bg-white">
+            <span class="text-xs font-semibold">Settings</span>
+        </button>
     </header>
 
     <div class="flex flex-1 overflow-hidden relative flex-col sm:flex-row">
@@ -82,6 +80,28 @@
                                     <input type="range" id="param-radius" min="5" max="60" step="1" value="20" class="w-full accent-indigo-600 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                                 </div>
                             </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-xs text-slate-600 block mb-1">A Color</label>
+                                    <input type="color" id="color-a" value="#ef4444" class="w-full h-8 border border-slate-300 rounded">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-slate-600 block mb-1">U Color</label>
+                                    <input type="color" id="color-u" value="#3b82f6" class="w-full h-8 border border-slate-300 rounded">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-slate-600 block mb-1">G Color</label>
+                                    <input type="color" id="color-g" value="#22c55e" class="w-full h-8 border border-slate-300 rounded">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-slate-600 block mb-1">C Color</label>
+                                    <input type="color" id="color-c" value="#eab308" class="w-full h-8 border border-slate-300 rounded">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="text-xs text-slate-600 block mb-1">Other Color</label>
+                                    <input type="color" id="color-other" value="#94a3b8" class="w-full h-8 border border-slate-300 rounded">
+                                </div>
+                            </div>
 
                             <div>
                                 <label class="text-xs text-slate-600 block mb-1">Font Size: <span id="val-font" class="font-mono">20</span>px</label>
@@ -103,8 +123,12 @@
                                         <option value="dotted">Dotted</option>
                                     </select>
                                     <div>
-                                        <label class="text-[10px] text-slate-500 block">Width: <span id="val-w-bb">3</span></label>
-                                        <input type="range" id="param-w-bb" min="1" max="10" step="0.5" value="3" class="w-full accent-indigo-600 h-1">
+                                        <label class="text-[10px] text-slate-500 block">Color</label>
+                                        <input type="color" id="color-backbone" value="#94a3b8" class="w-full h-6 border border-slate-300 rounded">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] text-slate-500 block">Width: <span id="val-w-bb">8</span></label>
+                                        <input type="range" id="param-w-bb" min="1" max="20" step="0.5" value="8" class="w-full accent-indigo-600 h-1">
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2">
@@ -123,8 +147,12 @@
                                         <option value="dotted">Dotted</option>
                                     </select>
                                     <div>
-                                        <label class="text-[10px] text-slate-500 block">Width: <span id="val-w-pair">2</span></label>
-                                        <input type="range" id="param-w-pair" min="1" max="10" step="0.5" value="2" class="w-full accent-indigo-600 h-1">
+                                        <label class="text-[10px] text-slate-500 block">Color</label>
+                                        <input type="color" id="color-pair" value="#ef4444" class="w-full h-6 border border-slate-300 rounded">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] text-slate-500 block">Width: <span id="val-w-pair">8</span></label>
+                                        <input type="range" id="param-w-pair" min="1" max="20" step="0.5" value="8" class="w-full accent-indigo-600 h-1">
                                     </div>
                                 </div>
                             </div>
@@ -184,6 +212,9 @@
                             Save SVG
                         </button>
                     </div>
+                    <button id="resetSettings" class="w-full mt-3 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded shadow-sm transition">
+                        Reset Settings
+                    </button>
                 </div>
 
             </div>
