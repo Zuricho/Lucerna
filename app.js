@@ -30,6 +30,9 @@ let params = {
         C: '#eab308',
         other: '#94a3b8'
     },
+    fontFamily: "'JetBrains Mono', monospace",
+    fontWeight: '700',
+    fontStyle: 'normal',
     backboneColor: '#94a3b8',
     pairColor: '#ef4444',
 
@@ -270,6 +273,9 @@ function readParams() {
         C: document.getElementById('color-c').value,
         other: document.getElementById('color-other').value
     };
+    params.fontFamily = document.getElementById('font-family').value;
+    params.fontWeight = document.getElementById('font-weight').value;
+    params.fontStyle = document.getElementById('font-style').value;
 
     params.backboneStyle = document.getElementById('style-backbone').value;
     params.backboneWidth = parseFloat(document.getElementById('param-w-bb').value);
@@ -295,6 +301,9 @@ function resetSettings() {
     setValue('param-radius', defaultParams.radius);
     setValue('param-font', defaultParams.fontSize);
     setValue('style-node', defaultParams.nodeStyle);
+    setValue('font-family', defaultParams.fontFamily);
+    setValue('font-weight', defaultParams.fontWeight);
+    setValue('font-style', defaultParams.fontStyle);
     setValue('color-a', defaultParams.nodeColors.A);
     setValue('color-u', defaultParams.nodeColors.U);
     setValue('color-g', defaultParams.nodeColors.G);
@@ -427,6 +436,9 @@ function updateVisualStyles(nodeSelection, linkSelection) {
     nodeSelection.select("text")
         .style("font-size", `${params.fontSize}px`)
         .style("display", params.fontSize === 0 ? "none" : null)
+        .style("font-family", params.fontFamily)
+        .style("font-weight", params.fontWeight)
+        .style("font-style", params.fontStyle)
         .style("fill", params.nodeStyle === 'outline' ? '#000000' : 'white')
         .style("text-shadow", "none")
         .style("stroke", "none")
@@ -578,6 +590,17 @@ function setupControls() {
         const el = document.getElementById(id);
         if (el) {
             el.addEventListener('input', () => {
+                readParams();
+                updateVisualStyles();
+            });
+        }
+    });
+
+    const fontIds = ['font-family', 'font-weight', 'font-style'];
+    fontIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('change', () => {
                 readParams();
                 updateVisualStyles();
             });
